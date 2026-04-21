@@ -1,43 +1,43 @@
 # flutch
 
-## Format de reponse
+## Format de réponse
 
-Les livrables ont ete organises sous forme de depot Git public, conformement au format attendu.
+Les livrables ont été organisés sous forme de dépôt Git public, conformément au format attendu.
 
 Le principe retenu est le suivant :
 
-- chaque defi a sa propre branche dediee
-- chaque branche contient un `README.md` qui sert de reponse structuree pour le defi concerne
-- la pull request associee permet de consulter facilement les modifications de code, les explications et le diff
+- chaque défi a sa propre branche dédiée
+- chaque branche contient un `README.md` qui sert de réponse structurée pour le défi concerné
+- la pull request associée permet de consulter facilement les modifications de code, les explications et le diff
 
-## Reponses par defi
+## Réponses par défi
 
-### Defi 1
+### Défi 1
 
 - Branche : `defis1`
 - Pull request : https://github.com/RijaRR/flutch/pull/2
-- Reponse : voir le `README.md` present dans la branche `defis1`
+- Réponse : voir le `README.md` présent dans la branche `defis1`
 
-### Defi 2
+### Défi 2
 
 - Branche : `defis2`
 - Pull request : https://github.com/RijaRR/flutch/pull/3
-- Reponse : voir le `README.md` present dans la branche `defis2`
+- Réponse : voir le `README.md` présent dans la branche `defis2`
 
-### Defi 3
+### Défi 3
 
 - Branche : `defis3`
 - Pull request : https://github.com/RijaRR/flutch/pull/4
-- Reponse : voir le `README.md` present dans la branche `defis3`
+- Réponse : voir le `README.md` présent dans la branche `defis3`
 
-## Lecture recommandee
+## Lecture recommandée
 
-Pour evaluer une reponse :
+Pour évaluer une réponse :
 
-1. ouvrir la pull request du defi concerne
+1. ouvrir la pull request du défi concerné
 2. consulter le `README.md` de la branche correspondante
-3. parcourir ensuite le diff de la PR pour voir les choix d'implementation
+3. parcourir ensuite le diff de la PR pour voir les choix d'implémentation
 
 ## Remarque
 
-Cette branche `main` sert uniquement de point d'entree pour expliquer l'organisation des livrables. Les reponses detaillees se trouvent dans les branches des defis.
+Cette branche `main` sert uniquement de point d'entrée pour expliquer l'organisation des livrables. Les réponses détaillées se trouvent dans les branches des défis.
