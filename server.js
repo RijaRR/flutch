@@ -15,6 +15,7 @@ const { globalLimiter } = require('./middleware/rateLimiter');
 const { pool, initSchema } = require('./db');
 const { syncBiens, syncAcquereurs, integrityCheck, registerWebhooks } = require('./pipedrive');
 const { resolveStageIds } = require('./services/pipedriveService');
+const { startWebhookWorker, shutdownWebhookQueue } = require('./services/webhookQueueService');
 const { schedule, shutdownAll } = require('./lib/scheduler');
 const { withSyncLock } = require('./lib/syncLock');
 
@@ -177,6 +178,14 @@ async function startServer() {
     logger.info(`   Webhooks      : temps réel activé`);
     logger.info(`   Intégrité     : quotidienne à ${config.DAILY_INTEGRITY_HOUR}h du matin\n`);
 
+    // Le process web peut consommer les jobs lui-meme, ou laisser cette
+    // responsabilite a `npm run worker:webhooks` quand on veut un worker dedie.
+    if (config.WEBHOOK_WORKER_AUTOSTART) {
+      startWebhookWorker();
+    } else {
+      logger.info('ℹ️ Webhook worker inline désactivé (WEBHOOK_WORKER_AUTOSTART=false)');
+    }
+
     if (config.PIPEDRIVE_API_TOKEN) {
       const baseUrl = config.REPLIT_DEV_DOMAIN
         ? `https://${config.REPLIT_DEV_DOMAIN}`
@@ -220,7 +229,10 @@ async function startServer() {
 function gracefulShutdown(signal) {
   logger.info(`🛑 Signal ${signal} reçu — arrêt propre`);
   shutdownAll();
-  pool.end().then(() => {
+  Promise.all([
+    shutdownWebhookQueue().catch(() => {}),
+    pool.end(),
+  ]).then(() => {
     logger.info('✅ Pool PostgreSQL fermé');
     process.exit(0);
   }).catch(() => process.exit(1));

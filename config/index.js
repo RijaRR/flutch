@@ -7,6 +7,10 @@ const num = (val, def) => {
   const n = parseInt(val, 10);
   return Number.isFinite(n) ? n : def;
 };
+const bool = (val, def) => {
+  if (val == null || val === '') return def;
+  return ['1', 'true', 'yes', 'on'].includes(String(val).trim().toLowerCase());
+};
 
 const NODE_ENV = process.env.NODE_ENV || 'development';
 const IS_PROD = NODE_ENV === 'production';
@@ -47,6 +51,14 @@ const config = {
   REPLIT_DEV_DOMAIN: process.env.REPLIT_DEV_DOMAIN || '',
   REPL_OWNER: process.env.REPL_OWNER || '',
   REPL_SLUG: process.env.REPL_SLUG || '',
+
+  // Configuration Redis / BullMQ pour le traitement asynchrone des webhooks.
+  // Le worker peut tourner dans le process web ou via `npm run worker:webhooks`.
+  REDIS_URL: process.env.REDIS_URL || '',
+  WEBHOOK_WORKER_AUTOSTART: bool(process.env.WEBHOOK_WORKER_AUTOSTART, true),
+  WEBHOOK_WORKER_CONCURRENCY: num(process.env.WEBHOOK_WORKER_CONCURRENCY, 4),
+  WEBHOOK_QUEUE_ATTEMPTS: num(process.env.WEBHOOK_QUEUE_ATTEMPTS, 5),
+  WEBHOOK_QUEUE_BACKOFF_MS: num(process.env.WEBHOOK_QUEUE_BACKOFF_MS, 1000),
 
   SORTEUR_EMAILS: ['mickael@leboutiquier.fr'],
   SORTEUR_STAGE_ID: 300,
