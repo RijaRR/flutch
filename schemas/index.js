@@ -10,6 +10,14 @@ const optionalNonNegativeNumber = z
   .transform((v) => (v === '' || v == null ? null : Number(v)))
   .nullable();
 
+const optionalDpeCriteria = z
+  .union([z.literal(''), z.null(), z.undefined(), z.string()])
+  .transform((v) => (v === '' || v == null ? null : String(v).trim().toUpperCase()))
+  .refine((v) => v == null || /^[A-G](\s*(,|OU)\s*[A-G])*$/i.test(v), {
+    message: 'DPE invalide (exemples: A, B, A OU B, A,B)',
+  })
+  .nullable();
+
 const createUserSchema = z.object({
   name: z.string().trim().min(1, 'Nom requis'),
   email,
@@ -54,6 +62,7 @@ const updateAcquereurCriteriaSchema = z
     rentabilite_min: optionalNonNegativeNumber,
     occupation_status: z.union([z.array(z.string()), z.null()]).optional(),
     secteurs: z.union([z.string(), z.array(z.string()), z.null()]).optional(),
+    dpe: optionalDpeCriteria.optional(),
   })
   .refine(
     (d) => d.budget_min == null || d.budget_max == null || d.budget_min <= d.budget_max,

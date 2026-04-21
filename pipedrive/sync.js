@@ -55,6 +55,7 @@ async function syncBiens(apiToken, stageName = 'Commercialisé', userId = null, 
     photo_2: findKey('Photo 2'), photo_3: findKey('Photo 3'), photo_4: findKey('Photo 4'),
     autre_photo: findKey('Autre photo'),
     description: findKey('Description') || findKey('Descriptif'),
+    dpe: findKey('dpe'),
     classe_actifs: 'fddda5e38e41f34e60fa29e673fdfcb616400714',
     qualite_emplacement: '7c1fc74a248984e86233964b915267757dac7463',
     regime_propriete: 'bf3b56e01ab05315c1bf7e594f98353c9cc83b72',
@@ -118,6 +119,7 @@ async function syncBiens(apiToken, stageName = 'Commercialisé', userId = null, 
       const photoCouv = g(KEYS.photo_couverture) || g(KEYS.photo_1) || null;
       const photo2 = g(KEYS.photo_2_real) || g(KEYS.photo_2) || null;
       const photo3 = g(KEYS.photo_3_real) || g(KEYS.photo_3) || null;
+      const dpe = g(KEYS.dpe) || null;
 
       await client.query(`
         INSERT INTO biens (pipedrive_deal_id, titre, adresse, code_postal, ville, prix_fai, rentabilite,
@@ -130,8 +132,8 @@ async function syncBiens(apiToken, stageName = 'Commercialisé', userId = null, 
           point_vigilance, points_positifs,
           surface_rdc, surface_etage, surface_sous_sol, surface_ponderee,
           imputation_taxe_fonciere, rentabilite_actuelle, lien_drive,
-          pipedrive_updated_at, pipedrive_created_at, synced_at)
-        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29,$30,$31,$32,$33,$34,$35,$36,$37,$38,$39,$40,$41,$42,$43,$44,$45,$46,$47,$48,$49,$50,NOW())
+          pipedrive_updated_at, pipedrive_created_at, synced_at, dpe)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29,$30,$31,$32,$33,$34,$35,$36,$37,$38,$39,$40,$41,$42,$43,$44,$45,$46,$47,$48,$49,$50,NOW(),$51)
         ON CONFLICT(pipedrive_deal_id) DO UPDATE SET
           titre=EXCLUDED.titre, adresse=EXCLUDED.adresse, code_postal=EXCLUDED.code_postal,
           ville=EXCLUDED.ville, prix_fai=EXCLUDED.prix_fai, rentabilite=EXCLUDED.rentabilite,
@@ -157,7 +159,8 @@ async function syncBiens(apiToken, stageName = 'Commercialisé', userId = null, 
           lien_drive=EXCLUDED.lien_drive,
           pipedrive_updated_at=EXCLUDED.pipedrive_updated_at,
           pipedrive_created_at=EXCLUDED.pipedrive_created_at,
-          synced_at=NOW()
+          synced_at=NOW(),
+          dpe=EXCLUDED.dpe
       `, [
         deal.id, deal.title || '', g(KEYS.adresse) || deal.title, cp, g(KEYS.ville),
         toFloat(g(KEYS.prix_fai)) || toFloat(deal.value), null,
@@ -181,6 +184,7 @@ async function syncBiens(apiToken, stageName = 'Commercialisé', userId = null, 
         resolvedImputTF, toFloat(g(KEYS.rentabilite_actuelle)),
         lienDrive,
         deal.update_time || null, deal.add_time || null,
+        dpe,
       ]);
     }
     await client.query('COMMIT');
@@ -221,7 +225,10 @@ async function syncAcquereurs(apiToken, pipelineNameOrId, userId = null, stageNa
   const fieldMap = await getDealFieldsMap(apiToken);
   const findKey = (name) => Object.entries(fieldMap).find(([, v]) => norm(v) === norm(name))?.[0];
 
-  const KEYS = ACQ_KEYS;
+  const KEYS = {
+    ...ACQ_KEYS,
+    dpe: findKey('dpe'),
+  };
 
   let allDeals = [];
   let start = 0;
@@ -309,19 +316,20 @@ async function syncAcquereurs(apiToken, pipelineNameOrId, userId = null, stageNa
 
         await client.query(`
           INSERT INTO acquereur_criteria (acquereur_id, budget_min, budget_max, rentabilite_min,
-            occupation_status, occupation_ids, secteurs, apport, condition_pret, updated_at)
-          VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,NOW())
+            occupation_status, occupation_ids, secteurs, apport, condition_pret, dpe, updated_at)
+          VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,NOW())
           ON CONFLICT(acquereur_id) DO UPDATE SET
             budget_min=EXCLUDED.budget_min, budget_max=EXCLUDED.budget_max,
             rentabilite_min=EXCLUDED.rentabilite_min,
             occupation_status=EXCLUDED.occupation_status,
             occupation_ids=EXCLUDED.occupation_ids, secteurs=EXCLUDED.secteurs,
             apport=EXCLUDED.apport, condition_pret=EXCLUDED.condition_pret,
+            dpe=EXCLUDED.dpe,
             updated_at=NOW()
         `, [
           acq.id, toFloat(g(KEYS.budget_min)), toFloat(g(KEYS.budget_max)),
           toFloat(g(KEYS.rentabilite_min)), occLabels, occIds, secteurs || null,
-          toFloat(g(KEYS.apport)), condPretLabel,
+          toFloat(g(KEYS.apport)), condPretLabel, g(KEYS.dpe) || null,
         ]);
       }
     }

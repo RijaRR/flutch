@@ -16,7 +16,7 @@ class AcquereursRepository {
 
   async findByIdWithCriteria(id) {
     const { rows } = await this.pool.query(
-      `SELECT a.*, c.budget_min, c.budget_max, c.rentabilite_min, c.secteurs,
+      `SELECT a.*, c.budget_min, c.budget_max, c.rentabilite_min, c.secteurs, c.dpe,
               c.occupation_status as crit_occ, c.occupation_ids as crit_occ_ids
        FROM acquereurs a
        LEFT JOIN acquereur_criteria c ON c.acquereur_id = a.id
@@ -36,7 +36,7 @@ class AcquereursRepository {
     const { rows } = await this.pool.query(
       `SELECT a.id, a.titre, a.pipedrive_deal_id, a.contact_name, a.contact_email,
               a.contact_phone, a.owner_name, a.pipedrive_updated_at, a.pipedrive_created_at,
-              c.budget_min, c.budget_max, c.rentabilite_min, c.secteurs
+              c.budget_min, c.budget_max, c.rentabilite_min, c.secteurs, c.dpe
        FROM acquereurs a
        LEFT JOIN acquereur_criteria c ON c.acquereur_id = a.id
        WHERE a.archived = $1 AND a.owner_email = $2
@@ -51,7 +51,7 @@ class AcquereursRepository {
     const { rows } = await this.pool.query(
       `SELECT a.id, a.titre, a.pipedrive_deal_id, a.contact_name, a.contact_email,
               a.contact_phone, a.owner_name, a.pipedrive_updated_at, a.pipedrive_created_at,
-              c.budget_min, c.budget_max, c.rentabilite_min, c.secteurs
+              c.budget_min, c.budget_max, c.rentabilite_min, c.secteurs, c.dpe
        FROM acquereurs a
        LEFT JOIN acquereur_criteria c ON c.acquereur_id = a.id
        WHERE a.archived = $1
