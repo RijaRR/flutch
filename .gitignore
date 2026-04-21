@@ -9,3 +9,4 @@ data/flutch.db
 data/flutch.db-shm
 data/flutch.db-wal
 logs/
+svg/
