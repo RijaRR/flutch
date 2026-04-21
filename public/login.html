@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<script>
+(function() {
+  var h = location.hash.match(/auth=([a-f0-9]+)/i);
+  if (h && h[1]) localStorage.setItem('auth_token', h[1]);
+  var origFetch = window.fetch;
+  window.fetch = function(input, init) {
+    init = init || {};
+    var url = typeof input === 'string' ? input : (input && input.url) || '';
+    if (url.indexOf('/api/') === 0 || url.indexOf(location.origin + '/api/') === 0) {
+      var token = localStorage.getItem('auth_token');
+      if (token) {
+        var headers = new Headers(init.headers || {});
+        if (!headers.has('Authorization')) headers.set('Authorization', 'Bearer ' + token);
+        init.headers = headers;
+      }
+    }
+    return origFetch.call(this, input, init);
+  };
+})();
+</script>
+<link rel="icon" type="image/x-icon" href="/favicon.ico">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Le Flutch — Connexion</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer">
+  <style>
+    :root {
+      --primary: #d6336c;
+      --primary-dark: #a61e4d;
+      --header-bg: #d6336c;
+      --header-bg-dark: #c27ab5;
+      --white: #FFFFFF;
+      --text: #2C3E50;
+      --text-light: #7F8C8D;
+      --border: #E8E8E8;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, var(--header-bg) 0%, var(--header-bg-dark) 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .login-card {
+      background: var(--white);
+      border-radius: 16px;
+      padding: 48px 40px;
+      width: 420px;
+      max-width: 92vw;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.3);
+    }
+    .logo {
+      text-align: center;
+      margin-bottom: 36px;
+    }
+    .logo img { height: 48px; margin-bottom: 12px; border-radius: 6px; }
+    .logo-text {
+      font-size: 28px;
+      font-weight: 800;
+      color: var(--primary);
+      letter-spacing: 0.5px;
+    }
+    .logo-sub {
+      font-size: 14px;
+      color: var(--text-light);
+      margin-top: 4px;
+    }
+    .form-group { margin-bottom: 20px; }
+    label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 6px;
+    }
+    input {
+      width: 100%;
+      padding: 12px 14px;
+      border: 2px solid var(--border);
+      border-radius: 10px;
+      font-size: 15px;
+      color: var(--text);
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    input:focus { border-color: var(--primary); }
+    .btn {
+      width: 100%;
+      padding: 14px;
+      background: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+      margin-top: 8px;
+    }
+    .btn:hover { background: var(--primary-dark); }
+    .error {
+      background: #fce4ed;
+      color: var(--primary-dark);
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 14px;
+      margin-bottom: 16px;
+      display: none;
+    }
+    .error.show { display: block; }
+
+    @media (max-width: 480px) {
+      .login-card { padding: 32px 24px; border-radius: 12px; }
+      .logo-text { font-size: 24px; }
+      .logo-sub { font-size: 13px; }
+      .logo img { height: 42px; }
+      input { padding: 14px; font-size: 16px; min-height: 48px; }
+      .btn { padding: 16px; font-size: 17px; min-height: 52px; }
+      label { font-size: 14px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="login-card">
+    <div class="logo">
+      <img src="/favicon.png" alt="Le Flutch">
+      <div class="logo-text">LE FLUTCH</div>
+      <div class="logo-sub">Moteur de Recherche</div>
+    </div>
+    <div id="successMsg" style="display:none;background:#d4edda;color:#155724;border:1px solid #c3e6cb;padding:12px;border-radius:8px;font-size:14px;margin-bottom:16px;">
+      Mot de passe créé, connecte-toi.
+    </div>
+    <div class="error" id="error"></div>
+    <form id="loginForm">
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" id="email" placeholder="vous@agence.fr" required autofocus autocomplete="username">
+      </div>
+      <div class="form-group">
+        <label>Mot de passe</label>
+        <input type="password" id="password" placeholder="••••••••" required autocomplete="current-password">
+      </div>
+      <button type="submit" class="btn" id="submitBtn">
+        Se connecter
+      </button>
+    </form>
+  </div>
+  <script>
+    (function() {
+      var params = new URLSearchParams(location.search);
+      if (params.get('activated') === '1') {
+        document.getElementById('successMsg').style.display = 'block';
+      }
+    })();
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('submitBtn');
+      btn.textContent = 'Connexion...';
+      btn.disabled = true;
+      try {
+        const res = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: document.getElementById('email').value,
+            password: document.getElementById('password').value
+          })
+        });
+        const data = await res.json();
+        if (data.error) {
+          document.getElementById('error').textContent = data.error;
+          document.getElementById('error').classList.add('show');
+          btn.textContent = 'Se connecter';
+          btn.disabled = false;
+        } else {
+          if (data.token) {
+            try { localStorage.setItem('auth_token', data.token); } catch(e) {}
+            window.location.href = '/search.html#auth=' + encodeURIComponent(data.token);
+          } else {
+            window.location.href = '/search.html';
+          }
+        }
+      } catch(err) {
+        document.getElementById('error').textContent = 'Erreur de connexion';
+        document.getElementById('error').classList.add('show');
+        btn.textContent = 'Se connecter';
+        btn.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>
