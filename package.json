@@ -8,6 +8,8 @@
   },
   "scripts": {
     "start": "node server.js",
+    "worker:mickael": "node worker/run.js",
+    "worker:mickael:once": "node worker/run.js --once",
     "test": "jest"
   },
   "dependencies": {
