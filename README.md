@@ -14,19 +14,19 @@ Le principe retenu est le suivant :
 
 ### Défi 1
 
-- Branche : `defis1`
+- Branche : [defis1](https://github.com/RijaRR/flutch/tree/defis1)
 - Pull request : https://github.com/RijaRR/flutch/pull/2
 - Réponse : voir le `README.md` présent dans la branche `defis1`
 
 ### Défi 2
 
-- Branche : `defis2`
+- Branche : [defis2](https://github.com/RijaRR/flutch/tree/defis2)
 - Pull request : https://github.com/RijaRR/flutch/pull/3
 - Réponse : voir le `README.md` présent dans la branche `defis2`
 
 ### Défi 3
 
-- Branche : `defis3`
+- Branche : [defis3](https://github.com/RijaRR/flutch/tree/defis3)
 - Pull request : https://github.com/RijaRR/flutch/pull/4
 - Réponse : voir le `README.md` présent dans la branche `defis3`
 
