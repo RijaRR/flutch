@@ -11,7 +11,7 @@ ALTER TABLE biens ADD COLUMN IF NOT EXISTS dpe TEXT;
 ALTER TABLE acquereur_criteria ADD COLUMN IF NOT EXISTS dpe TEXT;
 ```
 
-Dans le projet, cette migration est intégrée dans `initSchema()` via :
+Dans le projet, cette migration est intégrée dans `initSchema()` via [db.js](https://github.com/RijaRR/flutch/blob/defis2/db.js#L242):
 
 ```js
 const migrations = [
@@ -24,13 +24,13 @@ const migrations = [
 
 Le champ DPE est résolu depuis Pipedrive puis persisté dans PostgreSQL.
 
-Dans `pipedrive/fieldMapping.js`, le mapping ajoute la clé DPE sur les biens :
+Dans [pipedrive/fieldMapping.js](https://github.com/RijaRR/flutch/blob/defis2/pipedrive/fieldMapping.js#L96), le mapping ajoute la clé DPE sur les biens :
 
 ```js
 dpe: findKey('dpe'),
 ```
 
-Dans `pipedrive/sync.js`, on extrait puis on sauvegarde le DPE des biens :
+Dans [pipedrive/sync.js](https://github.com/RijaRR/flutch/blob/defis2/pipedrive/sync.js#L58), on extrait puis on sauvegarde le DPE des biens :
 
 ```js
 const KEYS = {
@@ -74,7 +74,7 @@ ON CONFLICT(acquereur_id) DO UPDATE SET
   updated_at=NOW()
 ```
 
-La même logique est aussi appliquée dans `pipedrive/webhookSync.js` pour la synchronisation temps réel.
+La même logique est aussi appliquée dans [pipedrive/webhookSync.js](https://github.com/RijaRR/flutch/blob/defis2/pipedrive/webhookSync.js) pour la synchronisation temps réel.
 
 ### Algorithmique
 
