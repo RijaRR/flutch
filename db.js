@@ -1,5 +1,6 @@
 const { Pool } = require('pg');
 const crypto = require('crypto');
+require('./config/loadEnv');
 
 function hashPassword(pwd) {
   const salt = crypto.randomBytes(16).toString('hex');
@@ -464,9 +465,9 @@ async function matchAcquereurToBiens(acquereurId, hideelegation = true) {
   const { rows } = await pool.query(query, criteriaParams);
   if (!criteria?.dpe) return rows;
 
-  // Le DPE est une contrainte dure pour les nouveaux matchs, mais on conserve
-  // les todos déjà matérialisés afin de ne pas casser l'historique métier.
-  return rows.filter((bien) => bien.todo_id || dpeMatchesCriteria(bien.dpe, criteria.dpe));
+  // Le DPE est une contrainte dure : un bien hors critere ne doit jamais etre
+  // propose, meme si une association todo existe deja.
+  return rows.filter((bien) => dpeMatchesCriteria(bien.dpe, criteria.dpe));
 }
 
 async function matchBienToAcquereurs(bienId, ownerEmail = null) {
@@ -499,8 +500,8 @@ async function matchBienToAcquereurs(bienId, ownerEmail = null) {
 
   return acquereurs.filter(a => {
     try {
-      if (a.todo_id) return true;
       if (a.dpe && !dpeMatchesCriteria(bien.dpe, a.dpe)) return false;
+      if (a.todo_id) return true;
       if (a.budget_min && a.budget_min > 0 && bien.prix_fai < a.budget_min) return false;
       if (a.budget_max && a.budget_max > 0 && bien.prix_fai > a.budget_max) return false;
       if (a.rentabilite_min && a.rentabilite_min > 0 && bienRenta && bienRenta < a.rentabilite_min) return false;
