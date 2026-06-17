@@ -1,5 +1,7 @@
 'use strict';
 
+require('./loadEnv');
+
 const crypto = require('crypto');
 
 const sanitize = (val) => (val == null ? '' : String(val)).replace(/\s+/g, '');

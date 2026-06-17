@@ -93,6 +93,7 @@ async function getBienKeys(apiToken) {
     photo_2: findKey('Photo 2'), photo_3: findKey('Photo 3'), photo_4: findKey('Photo 4'),
     autre_photo: findKey('Autre photo'),
     description: findKey('Description') || findKey('Descriptif'),
+    dpe: findKey('dpe'),
     classe_actifs: 'fddda5e38e41f34e60fa29e673fdfcb616400714',
     qualite_emplacement: '7c1fc74a248984e86233964b915267757dac7463',
     regime_propriete: 'bf3b56e01ab05315c1bf7e594f98353c9cc83b72',

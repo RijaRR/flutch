@@ -92,7 +92,7 @@ router.post('/pipedrive', (req, res) => {
         await syncSingleBien(current, config.PIPEDRIVE_API_TOKEN);
       } else if (isAcqStage && status === 'open') {
         await archiveDeal(dealId);
-        await syncSingleAcquereur(current);
+        await syncSingleAcquereur(current, config.PIPEDRIVE_API_TOKEN);
       } else {
         const { rows: existingBien } = await pool.query('SELECT id FROM biens WHERE pipedrive_deal_id = $1 AND archived = 0', [dealId]);
         const { rows: existingAcq } = await pool.query('SELECT id FROM acquereurs WHERE pipedrive_deal_id = $1 AND archived = 0', [dealId]);

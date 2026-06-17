@@ -1,5 +1,6 @@
 const { Pool } = require('pg');
 const crypto = require('crypto');
+require('./config/loadEnv');
 
 function hashPassword(pwd) {
   const salt = crypto.randomBytes(16).toString('hex');
@@ -54,6 +55,34 @@ const pool = new Pool({
   max: 20,
   idleTimeoutMillis: 30000,
 });
+
+const DPE_VALUES = Object.freeze(['A', 'B', 'C', 'D', 'E', 'F', 'G']);
+
+function normalizeDpeLabel(value) {
+  if (value == null) return null;
+  const text = String(value).trim().toUpperCase();
+  if (!text) return null;
+
+  const tokens = text.match(/[A-Z]+/g) || [];
+  const validTokens = tokens.filter((token) => DPE_VALUES.includes(token));
+  if (validTokens.length > 0) return validTokens[validTokens.length - 1];
+
+  return DPE_VALUES.includes(text) ? text : null;
+}
+
+function parseDpeCriteria(value) {
+  if (value == null) return [];
+  const matches = String(value).toUpperCase().match(/[A-G]/g) || [];
+  return [...new Set(matches.filter((token) => DPE_VALUES.includes(token)))];
+}
+
+function dpeMatchesCriteria(bienDpe, criteriaDpe) {
+  const allowedValues = parseDpeCriteria(criteriaDpe);
+  if (allowedValues.length === 0) return true;
+  const current = normalizeDpeLabel(bienDpe);
+  if (!current) return false;
+  return allowedValues.includes(current);
+}
 
 async function initSchema() {
   await pool.query(`
@@ -112,6 +141,7 @@ async function initSchema() {
       synced_at           TIMESTAMP,
       pipedrive_updated_at TIMESTAMP,
       pipedrive_created_at TIMESTAMP,
+      dpe                 TEXT,
       created_at          TIMESTAMP DEFAULT NOW()
     );
 
@@ -142,6 +172,7 @@ async function initSchema() {
       occupation_status   TEXT,
       occupation_ids      TEXT,
       secteurs            TEXT,
+      dpe                 TEXT,
       apport              DOUBLE PRECISION,
       condition_pret      TEXT,
       updated_at          TIMESTAMP DEFAULT NOW()
@@ -209,9 +240,11 @@ async function initSchema() {
     'ALTER TABLE biens ADD COLUMN IF NOT EXISTS surface_ponderee DOUBLE PRECISION',
     'ALTER TABLE biens ADD COLUMN IF NOT EXISTS imputation_taxe_fonciere TEXT',
     'ALTER TABLE biens ADD COLUMN IF NOT EXISTS rentabilite_actuelle DOUBLE PRECISION',
+    'ALTER TABLE biens ADD COLUMN IF NOT EXISTS dpe TEXT',
     "ALTER TABLE email_queue ADD COLUMN IF NOT EXISTS channel TEXT DEFAULT 'email'",
     "ALTER TABLE email_queue ADD COLUMN IF NOT EXISTS brevo_message_id TEXT",
     "ALTER TABLE biens ADD COLUMN IF NOT EXISTS lien_drive TEXT",
+    'ALTER TABLE acquereur_criteria ADD COLUMN IF NOT EXISTS dpe TEXT',
   ];
   for (const sql of migrations) {
     try { await pool.query(sql); } catch (_) {}
@@ -430,7 +463,11 @@ async function matchAcquereurToBiens(acquereurId, hideelegation = true) {
   `;
 
   const { rows } = await pool.query(query, criteriaParams);
-  return rows;
+  if (!criteria?.dpe) return rows;
+
+  // Le DPE est une contrainte dure : un bien hors critere ne doit jamais etre
+  // propose, meme si une association todo existe deja.
+  return rows.filter((bien) => dpeMatchesCriteria(bien.dpe, criteria.dpe));
 }
 
 async function matchBienToAcquereurs(bienId, ownerEmail = null) {
@@ -442,7 +479,7 @@ async function matchBienToAcquereurs(bienId, ownerEmail = null) {
     SELECT a.*,
            c.budget_min, c.budget_max, c.rentabilite_min,
            c.occupation_status as crit_occ, c.occupation_ids as crit_occ_ids,
-           c.secteurs,
+           c.secteurs, c.dpe,
            t.id as todo_id,
            t.statut as statut_todo
     FROM acquereurs a
@@ -463,6 +500,7 @@ async function matchBienToAcquereurs(bienId, ownerEmail = null) {
 
   return acquereurs.filter(a => {
     try {
+      if (a.dpe && !dpeMatchesCriteria(bien.dpe, a.dpe)) return false;
       if (a.todo_id) return true;
       if (a.budget_min && a.budget_min > 0 && bien.prix_fai < a.budget_min) return false;
       if (a.budget_max && a.budget_max > 0 && bien.prix_fai > a.budget_max) return false;
@@ -491,4 +529,24 @@ async function matchBienToAcquereurs(bienId, ownerEmail = null) {
   });
 }
 
-module.exports = { pool, initSchema, getUser, getUserById, createUser, checkPassword, hashPassword, createAuthToken, getUserByToken, deleteAuthToken, createSetupToken, getValidSetupToken, consumeSetupToken, log, matchAcquereurToBiens, matchBienToAcquereurs };
+module.exports = {
+  pool,
+  initSchema,
+  getUser,
+  getUserById,
+  createUser,
+  checkPassword,
+  hashPassword,
+  createAuthToken,
+  getUserByToken,
+  deleteAuthToken,
+  createSetupToken,
+  getValidSetupToken,
+  consumeSetupToken,
+  log,
+  matchAcquereurToBiens,
+  matchBienToAcquereurs,
+  normalizeDpeLabel,
+  parseDpeCriteria,
+  dpeMatchesCriteria,
+};

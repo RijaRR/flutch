@@ -28,7 +28,7 @@ router.get('/', requireAuth, asyncHandler(async (req, res) => {
     const like = `%${q}%`;
     if (sorteurFilter) {
       ({ rows } = await pool.query(`
-        SELECT a.*, c.budget_min, c.budget_max, c.rentabilite_min, c.occupation_status, c.secteurs
+        SELECT a.*, c.budget_min, c.budget_max, c.rentabilite_min, c.occupation_status, c.secteurs, c.dpe
         FROM acquereurs a LEFT JOIN acquereur_criteria c ON c.acquereur_id = a.id
         WHERE a.archived = 0 AND a.pipedrive_stage_id = $4
         AND (a.titre ILIKE $1 OR a.contact_name ILIKE $2 OR a.contact_email ILIKE $3)
@@ -36,14 +36,14 @@ router.get('/', requireAuth, asyncHandler(async (req, res) => {
       `, [like, like, like, config.SORTEUR_STAGE_ID, limitVal]));
     } else if (ownerEmail) {
       ({ rows } = await pool.query(`
-        SELECT a.*, c.budget_min, c.budget_max, c.rentabilite_min, c.occupation_status, c.secteurs
+        SELECT a.*, c.budget_min, c.budget_max, c.rentabilite_min, c.occupation_status, c.secteurs, c.dpe
         FROM acquereurs a LEFT JOIN acquereur_criteria c ON c.acquereur_id = a.id
         WHERE a.archived = 0 AND (a.titre ILIKE $1 OR a.contact_name ILIKE $2 OR a.contact_email ILIKE $3) AND a.owner_email = $4
         ORDER BY COALESCE(a.pipedrive_updated_at, a.pipedrive_created_at, a.synced_at) DESC LIMIT $5
       `, [like, like, like, ownerEmail, limitVal]));
     } else {
       ({ rows } = await pool.query(`
-        SELECT a.*, c.budget_min, c.budget_max, c.rentabilite_min, c.occupation_status, c.secteurs
+        SELECT a.*, c.budget_min, c.budget_max, c.rentabilite_min, c.occupation_status, c.secteurs, c.dpe
         FROM acquereurs a LEFT JOIN acquereur_criteria c ON c.acquereur_id = a.id
         WHERE a.archived = 0 AND (a.titre ILIKE $1 OR a.contact_name ILIKE $2 OR a.contact_email ILIKE $3)
         ORDER BY COALESCE(a.pipedrive_updated_at, a.pipedrive_created_at, a.synced_at) DESC LIMIT $4
@@ -51,21 +51,21 @@ router.get('/', requireAuth, asyncHandler(async (req, res) => {
     }
   } else if (sorteurFilter) {
     ({ rows } = await pool.query(`
-      SELECT a.*, c.budget_min, c.budget_max, c.rentabilite_min, c.occupation_status, c.secteurs
+      SELECT a.*, c.budget_min, c.budget_max, c.rentabilite_min, c.occupation_status, c.secteurs, c.dpe
       FROM acquereurs a LEFT JOIN acquereur_criteria c ON c.acquereur_id = a.id
       WHERE a.archived = 0 AND a.pipedrive_stage_id = $1
       ORDER BY COALESCE(a.pipedrive_updated_at, a.pipedrive_created_at, a.synced_at) DESC LIMIT $2
     `, [config.SORTEUR_STAGE_ID, limitVal]));
   } else if (ownerEmail) {
     ({ rows } = await pool.query(`
-      SELECT a.*, c.budget_min, c.budget_max, c.rentabilite_min, c.occupation_status, c.secteurs
+      SELECT a.*, c.budget_min, c.budget_max, c.rentabilite_min, c.occupation_status, c.secteurs, c.dpe
       FROM acquereurs a LEFT JOIN acquereur_criteria c ON c.acquereur_id = a.id
       WHERE a.archived = 0 AND a.owner_email = $1
       ORDER BY COALESCE(a.pipedrive_updated_at, a.pipedrive_created_at, a.synced_at) DESC LIMIT $2
     `, [ownerEmail, limitVal]));
   } else {
     ({ rows } = await pool.query(`
-      SELECT a.*, c.budget_min, c.budget_max, c.rentabilite_min, c.occupation_status, c.secteurs
+      SELECT a.*, c.budget_min, c.budget_max, c.rentabilite_min, c.occupation_status, c.secteurs, c.dpe
       FROM acquereurs a LEFT JOIN acquereur_criteria c ON c.acquereur_id = a.id
       WHERE a.archived = 0
       ORDER BY COALESCE(a.pipedrive_updated_at, a.pipedrive_created_at, a.synced_at) DESC LIMIT $1
@@ -81,14 +81,14 @@ router.get('/:id', requireAuth, asyncHandler(async (req, res) => {
   let acq;
   if (ownerEmail) {
     const { rows } = await pool.query(`
-      SELECT a.*, c.budget_min, c.budget_max, c.rentabilite_min, c.occupation_status, c.secteurs
+      SELECT a.*, c.budget_min, c.budget_max, c.rentabilite_min, c.occupation_status, c.secteurs, c.dpe
       FROM acquereurs a LEFT JOIN acquereur_criteria c ON c.acquereur_id = a.id
       WHERE a.id = $1 AND a.owner_email = $2
     `, [id, ownerEmail]);
     acq = rows[0];
   } else {
     const { rows } = await pool.query(`
-      SELECT a.*, c.budget_min, c.budget_max, c.rentabilite_min, c.occupation_status, c.secteurs
+      SELECT a.*, c.budget_min, c.budget_max, c.rentabilite_min, c.occupation_status, c.secteurs, c.dpe
       FROM acquereurs a LEFT JOIN acquereur_criteria c ON c.acquereur_id = a.id
       WHERE a.id = $1
     `, [id]);
@@ -103,7 +103,7 @@ router.get('/:id/detail', requireAuth, asyncHandler(async (req, res) => {
     return res.status(403).json({ error: 'Accès non autorisé à cet acquéreur' });
   }
   const { rows } = await pool.query(`
-    SELECT a.*, c.budget_min, c.budget_max, c.rentabilite_min, c.occupation_status, c.secteurs
+    SELECT a.*, c.budget_min, c.budget_max, c.rentabilite_min, c.occupation_status, c.secteurs, c.dpe
     FROM acquereurs a LEFT JOIN acquereur_criteria c ON c.acquereur_id = a.id
     WHERE a.id = $1
   `, [req.params.id]);
@@ -122,7 +122,7 @@ router.put('/:id/criteria', requireAuth, validate(updateAcquereurCriteriaSchema)
   if (!(await checkAcquereurOwnership(req.params.id, getAuthUserId(req), req))) {
     return res.status(403).json({ error: 'Accès non autorisé à cet acquéreur' });
   }
-  const { budget_min, budget_max, rentabilite_min, occupation_status, secteurs } = req.body;
+  const { budget_min, budget_max, rentabilite_min, occupation_status, secteurs, dpe } = req.body;
   const OCC_LABEL_TO_IDS = {
     'Occupé': ['332', '352', '354'],
     'Libre': ['333', '351', '353'],
@@ -138,19 +138,20 @@ router.put('/:id/criteria', requireAuth, validate(updateAcquereurCriteriaSchema)
   }
 
   await pool.query(`
-    INSERT INTO acquereur_criteria (acquereur_id, budget_min, budget_max, rentabilite_min, occupation_status, occupation_ids, secteurs, updated_at)
-    VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
+    INSERT INTO acquereur_criteria (acquereur_id, budget_min, budget_max, rentabilite_min, occupation_status, occupation_ids, secteurs, dpe, updated_at)
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())
     ON CONFLICT(acquereur_id) DO UPDATE SET
       budget_min=EXCLUDED.budget_min, budget_max=EXCLUDED.budget_max,
       rentabilite_min=EXCLUDED.rentabilite_min, occupation_status=EXCLUDED.occupation_status,
       occupation_ids=EXCLUDED.occupation_ids,
-      secteurs=EXCLUDED.secteurs, updated_at=NOW()
+      secteurs=EXCLUDED.secteurs, dpe=EXCLUDED.dpe, updated_at=NOW()
   `, [
     req.params.id,
     budget_min || null, budget_max || null, rentabilite_min || null,
     occupation_status ? JSON.stringify(occupation_status) : null,
     occupationIds,
     secteurs ? JSON.stringify(secteurs) : null,
+    dpe || null,
   ]);
   await log(getAuthUserId(req), 'update_criteria', 'acquereur', req.params.id, req.body);
   res.json({ success: true });
